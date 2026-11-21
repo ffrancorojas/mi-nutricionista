@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -16,7 +16,8 @@ import {
 } from '@mui/material';
 import { ArrowRight, CalendarDays, Droplets, Flame, Plus, Salad, Sparkles } from 'lucide-react';
 import { AppSidebar, MealCard, SummaryCard } from '../../components';
-import type { MealEntry, MealType } from '../../components';
+import type { MealType } from '../../components';
+import { createMeal as createMockMeal, getMeals, toggleMeal as toggleMockMeal } from '../../services';
 import { demoMeals, demoNutrition, mealTypes } from './dietDashboard.constants';
 import type { NewMealForm, NutritionRowProps } from './dietDashboard.types';
 
@@ -25,24 +26,50 @@ const dateFormatter = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: '
 export function DietDashboardView() {
   const [meals, setMeals] = useState(demoMeals);
   const [isDialogOpen, setDialogOpen] = useState(false);
+  const [apiStatus, setApiStatus] = useState<'loading' | 'ready' | 'offline'>('loading');
   const [form, setForm] = useState<NewMealForm>({ name: '', type: 'Desayuno', time: '08:00', note: '' });
   const registeredMeals = useMemo(() => meals.filter((meal) => meal.completed).length, [meals]);
 
-  function toggleMeal(id: string) {
-    setMeals((currentMeals) => currentMeals.map((meal) => meal.id === id ? { ...meal, completed: !meal.completed } : meal));
+  useEffect(() => {
+    let isMounted = true;
+    getMeals()
+      .then((mockMeals) => {
+        if (!isMounted) return;
+        setMeals(mockMeals);
+        setApiStatus('ready');
+      })
+      .catch(() => {
+        if (isMounted) setApiStatus('offline');
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  async function toggleMeal(id: string) {
+    try {
+      const updatedMeal = await toggleMockMeal(id);
+      setMeals((currentMeals) => currentMeals.map((meal) => meal.id === id ? updatedMeal : meal));
+      setApiStatus('ready');
+    } catch {
+      setApiStatus('offline');
+    }
   }
 
   function updateForm(field: keyof NewMealForm, value: string) {
     setForm((currentForm) => ({ ...currentForm, [field]: value } as NewMealForm));
   }
 
-  function addMeal() {
+  async function addMeal() {
     const name = form.name.trim();
     if (!name) return;
-    const newMeal: MealEntry = { ...form, name, id: `meal-${Date.now()}`, completed: false };
-    setMeals((currentMeals) => [...currentMeals, newMeal].sort((first, second) => first.time.localeCompare(second.time)));
-    setForm({ name: '', type: 'Desayuno', time: '08:00', note: '' });
-    setDialogOpen(false);
+    try {
+      const newMeal = await createMockMeal({ ...form, name });
+      setMeals((currentMeals) => [...currentMeals, newMeal].sort((first, second) => first.time.localeCompare(second.time)));
+      setForm({ name: '', type: 'Desayuno', time: '08:00', note: '' });
+      setDialogOpen(false);
+      setApiStatus('ready');
+    } catch {
+      setApiStatus('offline');
+    }
   }
 
   return (
@@ -56,7 +83,7 @@ export function DietDashboardView() {
               <Typography fontWeight={750}>Mi Nutricionista</Typography>
             </Box>
             <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-              <Typography variant="body2" color="text.secondary" textTransform="capitalize">{dateFormatter.format(new Date())}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>{dateFormatter.format(new Date())}</Typography>
             </Box>
             <Stack direction="row" alignItems="center" spacing={1}>
               <CalendarDays size={17} color="#68766c" />
@@ -79,10 +106,16 @@ export function DietDashboardView() {
 
           <Alert
             icon={<Sparkles size={17} />}
-            severity="info"
+            severity={apiStatus === 'offline' ? 'warning' : 'info'}
             sx={{ mb: 2.5, borderRadius: 2.5, bgcolor: '#edf3eb', color: '#49604c', '& .MuiAlert-icon': { color: '#68896a', alignItems: 'center' } }}
           >
-            <Typography variant="body2"><strong>Vista de muestra.</strong> El registro es temporal y no requiere iniciar sesión. Personalizaremos comidas y objetivos más adelante.</Typography>
+            <Typography variant="body2">
+              {apiStatus === 'offline'
+                ? <><strong>Mock desconectado.</strong> Arranca la app con <code>npm run dev</code> para recuperar el registro.</>
+                : apiStatus === 'loading'
+                  ? <><strong>Conectando con el mock…</strong> No requiere iniciar sesión ni guarda datos en disco.</>
+                  : <><strong>Backend mock conectado.</strong> Los cambios viven en memoria y se reinician al parar el servidor.</>}
+            </Typography>
           </Alert>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 3.5, overflowX: { xs: 'auto', sm: 'visible' } }}>

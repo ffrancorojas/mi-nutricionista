@@ -5,17 +5,16 @@ Aplicación web instalable (PWA) con frontend y backend separados. La idea y las
 ## Estructura
 
 - `client/`: interfaz React + TypeScript, Material UI y configuración PWA.
-- `server/`: API Node.js + TypeScript + Fastify.
+- `server/`: API mock en memoria con Fastify. No usa base de datos ni login.
 
 ## Desarrollo
 
 ```bash
 npm install
-npm run dev:client
-npm run dev:server
+npm run dev
 ```
 
-El cliente y el servidor se ejecutan por separado. El endpoint inicial del backend es `GET /api/health`.
+El comando `npm run dev` inicia el cliente y el backend mock juntos. La web estará disponible en `http://localhost:5173`; la API mock en `http://localhost:3000` ofrece `GET /api/meals`, `POST /api/meals` y `PATCH /api/meals/:id/toggle`. También puedes arrancarlos por separado con `npm run dev:client` y `npm run dev:server`.
 
 ## Tecnologías iniciales
 
@@ -26,4 +25,4 @@ El cliente y el servidor se ejecutan por separado. El endpoint inicial del backe
 
 ## Estado actual
 
-La primera fase se centra en el frontend. La pantalla actual es una maqueta funcional con comidas y valores nutricionales de ejemplo; añadir o marcar comidas solo cambia el estado temporal del navegador. No hay login ni persistencia todavía. La autenticación, persistencia de datos y funcionalidades de nutrición se definirán más adelante.
+La primera fase se centra en el frontend. La pantalla actual es una maqueta funcional con comidas y valores nutricionales de ejemplo. Las comidas se leen y modifican mediante el backend mock en memoria; al parar el servidor, los cambios se pierden. No hay login ni base de datos. La autenticación, persistencia de datos y funcionalidades de nutrición se definirán más adelante.
