@@ -24,4 +24,6 @@ El cliente y el servidor se ejecutan por separado. El endpoint inicial del backe
 - `vite-plugin-pwa` para preparar la instalación como aplicación web.
 - Fastify para la API.
 
-La autenticación, persistencia de datos y funcionalidades de nutrición quedan por definir.
+## Estado actual
+
+La primera fase se centra en el frontend. La pantalla actual es una maqueta funcional con comidas y valores nutricionales de ejemplo; añadir o marcar comidas solo cambia el estado temporal del navegador. No hay login ni persistencia todavía. La autenticación, persistencia de datos y funcionalidades de nutrición se definirán más adelante.
