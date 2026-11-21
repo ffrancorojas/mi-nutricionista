@@ -8,16 +8,18 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  IconButton,
   MenuItem,
   Paper,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { ArrowRight, CalendarDays, Droplets, Flame, Plus, Salad, Sparkles } from 'lucide-react';
+import { ArrowRight, Droplets, Flame, Menu, Plus, Salad, Sparkles } from 'lucide-react';
 import { AppSidebar, MealCard, SummaryCard } from '../../components';
-import type { MealType } from '../../components';
+import type { MealType, NavigationKey } from '../../components';
 import { createMeal as createMockMeal, getMeals, toggleMeal as toggleMockMeal } from '../../services';
+import { CalorieEstimationView } from '../calorie-estimation';
 import { demoMeals, demoNutrition, mealTypes } from './dietDashboard.constants';
 import type { NewMealForm, NutritionRowProps } from './dietDashboard.types';
 
@@ -26,6 +28,8 @@ const dateFormatter = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: '
 export function DietDashboardView() {
   const [meals, setMeals] = useState(demoMeals);
   const [isDialogOpen, setDialogOpen] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<NavigationKey>('today');
   const [apiStatus, setApiStatus] = useState<'loading' | 'ready' | 'offline'>('loading');
   const [form, setForm] = useState<NewMealForm>({ name: '', type: 'Desayuno', time: '08:00', note: '' });
   const registeredMeals = useMemo(() => meals.filter((meal) => meal.completed).length, [meals]);
@@ -74,23 +78,29 @@ export function DietDashboardView() {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppSidebar />
+      <AppSidebar
+        open={isMenuOpen}
+        selectedKey={activeSection}
+        onClose={() => setMenuOpen(false)}
+        onSelect={setActiveSection}
+      />
       <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 2, sm: 3, xl: 5 }, pt: { xs: 2.5, sm: 4 }, pb: { xs: 11, lg: 5 } }}>
         <Box sx={{ width: '100%', maxWidth: 1440, mx: 'auto' }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: { xs: 3, md: 4 } }}>
-            <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center', gap: 1, color: 'primary.main' }}>
-              <Salad size={23} strokeWidth={2.4} />
-              <Typography fontWeight={750}>Mi Nutricionista</Typography>
-            </Box>
-            <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
-              <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>{dateFormatter.format(new Date())}</Typography>
-            </Box>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <CalendarDays size={17} color="#68766c" />
-              <Typography variant="body2" fontWeight={600}>Mi día</Typography>
+            <Stack direction="row" alignItems="center" spacing={1.25}>
+              <IconButton onClick={() => setMenuOpen(true)} aria-label="Abrir menú lateral" color="primary" sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+                <Menu size={20} />
+              </IconButton>
+              <Stack direction="row" alignItems="center" spacing={0.9} sx={{ color: 'primary.main' }}>
+                <Salad size={22} strokeWidth={2.4} />
+                <Typography fontWeight={750}>Mi Nutricionista</Typography>
+              </Stack>
             </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' }, textTransform: 'capitalize' }}>{dateFormatter.format(new Date())}</Typography>
           </Stack>
 
+          {activeSection === 'today' ? (
+          <>
           <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'stretch', md: 'flex-end' }} justifyContent="space-between" spacing={2.5} sx={{ mb: 3.5 }}>
             <Box>
               <Typography variant="overline" color="primary.main" fontWeight={750} letterSpacing={1.2} sx={{ textTransform: 'uppercase' }}>{dateFormatter.format(new Date())}</Typography>
@@ -170,6 +180,10 @@ export function DietDashboardView() {
               </Paper>
             </Stack>
           </Box>
+          </>
+          ) : (
+            <CalorieEstimationView onBack={() => setActiveSection('today')} />
+          )}
         </Box>
       </Box>
 
